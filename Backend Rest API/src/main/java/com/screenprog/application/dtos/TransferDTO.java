@@ -1,4 +1,8 @@
 package com.screenprog.application.dtos;
 
-public record TransferDTO(Long accountIdOfSender, Long accountIdOfReceiver, Double balance, String pin) {
+import jakarta.validation.constraints.Min;
+
+import java.math.BigDecimal;
+
+public record TransferDTO(Long accountIdOfSender, Long accountIdOfReceiver, @Min(1) BigDecimal balance, String pin) {
 }

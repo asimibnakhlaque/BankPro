@@ -5,6 +5,8 @@ import com.screenprog.application.service.CenteralisedService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -60,6 +62,7 @@ public class AdminController {
         String replace = name.replace(name.charAt(0), String.valueOf(name.charAt(0)).toUpperCase().charAt(0));
 
         map.put("msg", "Hello, " + replace);
+        LOGGER.info("in hello...");
         return ResponseEntity.ok(map);
     }
 
@@ -105,6 +108,9 @@ public class AdminController {
 
     @GetMapping("/get-all-staff")
     public ResponseEntity<List<Staff>> getAllStaff(){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String name = authentication.getName();
+        LOGGER.info(name);
         return ResponseEntity.ok(service.getAllStaff());
     }
 

@@ -1,16 +1,15 @@
 package com.screenprog.application.service;
+import com.screenprog.application.config.JsonProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import java.security.Key;
-import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,7 +39,11 @@ import java.util.function.Function;
 @Service
 public class JsonWebTokenService {
 
-    private final String secretKey;
+    private final JsonProperties jsonProperties;
+
+    public JsonWebTokenService(JsonProperties jsonProperties) {
+        this.jsonProperties = jsonProperties;
+    }
 
     /**
      * Here in this constructor a secret key is generated the reason behind generating.
@@ -50,7 +53,9 @@ public class JsonWebTokenService {
      * @see <a href="https://www.baeldung.com/java-hmac-sha-256">Baeldung: HmacSHA256</a>
      * @see KeyGenerator
      * @see SecretKey
+//     * @deprecated because now we have moved to a secret key (.env configured) which can be changed at run time or can be used in other microservices
      * */
+    /*
     JsonWebTokenService(){
         try {
             KeyGenerator keyGenerator = KeyGenerator.getInstance("HmacSHA256");
@@ -61,6 +66,7 @@ public class JsonWebTokenService {
             throw new RuntimeException(e);
         }
     }
+    */
 
     /**
      * Generates a json web token for the given username. The token is valid for 30 minutes.
@@ -68,7 +74,6 @@ public class JsonWebTokenService {
      * @return {@link String} the json web token.
      * */
     public String generateToken(String username) {
-        int EXPIRY_DURATION = 1000 * 60 * 30; // 30 minutes
 
         Map<String, Object> claims = new HashMap<>();
 
@@ -77,7 +82,7 @@ public class JsonWebTokenService {
                 .add(claims)
                 .subject(username)
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + EXPIRY_DURATION))
+                .expiration(new Date(System.currentTimeMillis() + jsonProperties.expiryDuration()))
                 .and()
                 .signWith(getKey())
                 .compact();
@@ -91,7 +96,7 @@ public class JsonWebTokenService {
      * @return {@link SecretKey} The secret key used for signing the JWT.
      */
     private SecretKey getKey() {
-        byte[] decodedKey = Decoders.BASE64.decode(secretKey);
+        byte[] decodedKey = Decoders.BASE64.decode(jsonProperties.secretKey());
         return Keys.hmacShaKeyFor(decodedKey);
     }
 

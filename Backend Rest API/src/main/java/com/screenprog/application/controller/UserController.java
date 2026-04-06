@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -113,7 +114,7 @@ public class UserController {
 
     @GetMapping("check-balance")
     private ResponseEntity<String> checkBalance(@RequestParam Long accountNumber){
-        Double balance = userService.getBalance(accountNumber);
+        BigDecimal balance = userService.getBalance(accountNumber);
         if(balance == null)
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account number is incorrect");
         return ResponseEntity.ok(balance.toString());

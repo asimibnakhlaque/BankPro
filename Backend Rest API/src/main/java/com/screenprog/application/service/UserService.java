@@ -7,6 +7,7 @@ import com.screenprog.application.dtos.WithdrawDTO;
 import com.screenprog.application.email_service.EmailService;
 import com.screenprog.application.model.*;
 import com.screenprog.application.repo.*;
+import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +17,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -42,6 +45,7 @@ public class UserService {
         this.debitCardRepository = debitCardRepository;
         this.transactionsRepository = transactionsRepository;
     }
+
 
 
     @Transactional
@@ -72,7 +76,7 @@ public class UserService {
     }
 
 
-    public Double getBalance(Long accountNumber) {
+    public BigDecimal getBalance(Long accountNumber) {
         return accountRepository.findById(accountNumber)
                 .map(Account::getBalance)
                 .orElse(null);
@@ -92,7 +96,7 @@ public class UserService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Can't open more than one account of same type");
         var account = new Account();
         account.setCustomer(customer);
-        account.setBalance(00.0);
+        account.setBalance(BigDecimal.ZERO);
         account.setStatus(Status.ACTIVE);
         account.setType(accountDto.type());
         DebitCard card = saveDebitCard(accountDto.pin(), customer.getFirstName() + " " + customer.getLastName());
@@ -116,24 +120,24 @@ public class UserService {
             return "Incorrect pin - Transaction failed!";
         if (accountOfReceiver == null)
             return "Receiver account is incorrect";
-        if (accountOfSender.getBalance() - transferDTO.balance() < 100)
+        if (accountOfSender.getBalance().subtract(transferDTO.balance()).compareTo(BigDecimal.valueOf(100)) <= 0)
             return "Insufficient balance";
 
-        accountOfReceiver.setBalance(accountOfReceiver.getBalance() + transferDTO.balance());
-        accountOfSender.setBalance(accountOfSender.getBalance() - transferDTO.balance());
+        accountOfReceiver.setBalance(accountOfReceiver.getBalance().add(transferDTO.balance()).setScale(4, RoundingMode.HALF_EVEN));
+        accountOfSender.setBalance(accountOfSender.getBalance().subtract(transferDTO.balance()).setScale(4, RoundingMode.HALF_EVEN));
 
         List<Transaction> transactions = new ArrayList<>(List.of(
                 Transaction.builder()
                         .accountId(accountOfReceiver)
                         .description("Deposited by " + transferDTO.accountIdOfSender())
-                        .amount(transferDTO.balance())
-                        .balanceLeft(accountOfReceiver.getBalance())
+                        .amount(transferDTO.balance().setScale(4, RoundingMode.HALF_EVEN))
+                        .balanceLeft(accountOfReceiver.getBalance().setScale(4, RoundingMode.HALF_EVEN))
                         .build(),
                 Transaction.builder()
                         .accountId(accountOfSender)
                         .description("Transferred to " + transferDTO.accountIdOfReceiver())
-                        .amount(transferDTO.balance())
-                        .balanceLeft(accountOfSender.getBalance())
+                        .amount(transferDTO.balance().setScale(4, RoundingMode.HALF_EVEN))
+                        .balanceLeft(accountOfSender.getBalance().setScale(4, RoundingMode.HALF_EVEN))
                         .build()));
         transactionsRepository.saveAll(transactions);
 
@@ -170,14 +174,14 @@ public class UserService {
             return null;
         if(!encoder.matches(withdrawDTO.pin(), account.getCard().getPin()))
             throw  new IllegalArgumentException("Incorrect pin - withdrawal failed");
-        if(account.getBalance() - withdrawDTO.balance() < 100)
+        if(account.getBalance().subtract(withdrawDTO.balance()).compareTo(BigDecimal.valueOf(100)) <= 0)
             throw new IllegalArgumentException("Insufficient balance");
 
-        account.setBalance(account.getBalance() - withdrawDTO.balance());
+        account.setBalance(account.getBalance().subtract( withdrawDTO.balance()).setScale(4, RoundingMode.HALF_EVEN));
         Transaction transaction = Transaction.builder()
                 .accountId(account)
-                .amount(withdrawDTO.balance())
-                .balanceLeft(account.getBalance())
+                .amount(withdrawDTO.balance().setScale(4, RoundingMode.HALF_EVEN))
+                .balanceLeft(account.getBalance().setScale(4, RoundingMode.HALF_EVEN))
                 .description("Withdrawn by user")
                 .build();
         transactionsRepository.save(transaction);
@@ -193,15 +197,15 @@ public class UserService {
         if(account == null)
             return null;
 
-        if(withdrawDTO.balance() <= 0)
+        if(withdrawDTO.balance().compareTo(BigDecimal.ZERO) <= 0)
             throw new IllegalArgumentException("Deposit amount must be positive");
         if(!encoder.matches(withdrawDTO.pin(), account.getCard().getPin()))
             throw  new IllegalArgumentException("Incorrect pin - withdrawal failed");
-        account.setBalance(account.getBalance() + withdrawDTO.balance());
+        account.setBalance(account.getBalance().add(withdrawDTO.balance()).setScale(4, RoundingMode.HALF_EVEN));
         Transaction transaction = Transaction.builder()
                 .accountId(account)
-                .amount(withdrawDTO.balance())
-                .balanceLeft(account.getBalance())
+                .amount(withdrawDTO.balance().setScale(4, RoundingMode.HALF_EVEN))
+                .balanceLeft(account.getBalance().setScale(4, RoundingMode.HALF_EVEN))
                 .build();
 
         transactionsRepository.save(transaction);
