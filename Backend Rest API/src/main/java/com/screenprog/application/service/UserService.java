@@ -140,7 +140,7 @@ public class UserService {
                         .balanceLeft(accountOfSender.getBalance().setScale(4, RoundingMode.HALF_EVEN))
                         .build()));
         transactionsRepository.saveAll(transactions);
-
+        accountRepository.saveAll(List.of(accountOfReceiver, accountOfSender));
         return "Transaction Successful";
     }
 
