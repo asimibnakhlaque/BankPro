@@ -1,7 +1,7 @@
 package com.screenprog.application.controller;
 
 import com.screenprog.application.model.*;
-import com.screenprog.application.service.CenteralisedService;
+import com.screenprog.application.service.CentralizedService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -25,9 +25,9 @@ import java.util.Map;
 @RequestMapping("/admin")
 public class AdminController {
 
-    final private CenteralisedService service;
+    final private CentralizedService service;
     final private Logger LOGGER = LoggerFactory.getLogger(AdminController.class);
-    public AdminController(CenteralisedService service) {
+    public AdminController(CentralizedService service) {
         this.service = service;
     }
 

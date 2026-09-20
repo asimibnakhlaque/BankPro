@@ -39,15 +39,15 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(request -> request
-                        .requestMatchers("admin/hello", "admin/register", "user/register",
-                                "admin/login", "user/email", "user/verify-email",
-                                "user/forgot-pass-email", "user/forgot-pass-change")
+                        .requestMatchers("/admin/hello", "/admin/register", "/user/register",
+                                "/admin/login", "/user/email", "/user/verify-email",
+                                "/user/forgot-pass-email", "/user/forgot-pass-change")
                         .permitAll()
-                        .requestMatchers("admin/**")
+                        .requestMatchers("/admin/**")
                         .hasRole("ADMIN")
-                        .requestMatchers("staff/**")
+                        .requestMatchers("/staff/**")
                         .hasRole("STAFF")
-                        .requestMatchers("user/**")
+                        .requestMatchers("/user/**")
                         .hasRole("USER")
                         .anyRequest().authenticated())
                 .httpBasic(Customizer.withDefaults())
@@ -58,9 +58,8 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(this.userDetailsService);
         provider.setPasswordEncoder(new BCryptPasswordEncoder(12));
-        provider.setUserDetailsService(this.userDetailsService);
         return provider;
     }
 

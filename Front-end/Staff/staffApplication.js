@@ -13,7 +13,7 @@ if (username === "deepak.joshi@example.com") {
   document.querySelector(".profile p").textContent = `Deepak Joshi`;
 }
 const token = localStorage.getItem("token");
-
+global_data = []
 spinner.style.display = "block";
 transactions.style.display = "none";
 // Fetch pending applications
@@ -27,7 +27,8 @@ fetch(`${config.BACKEND_API_URL}/staff/get-pending-application`, {
   .then((response) => response.json())
   .then((data) => {
     const tableBody = document.querySelector("tbody");
-    tableBody.innerHTML = data
+    global_data = data
+    tableBody.innerHTML = global_data
       .map(
         (customer, index) => `
             <tr data-index="${index}">
@@ -38,7 +39,7 @@ fetch(`${config.BACKEND_API_URL}/staff/get-pending-application`, {
                 <td>${customer.mobileNumber}</td>
                 <td><img id="image" src=${`data:image/png;base64,${customer.image}`} alt="Image"></td>
                 <td><img id="card" src=${`data:image/png;base64,${customer.verificationId}`} alt="Card"></td>
-                <td><img id="card" src=${`data:image/png;base64,${customer.signatureImage}`} alt="Signature"></td>
+                <td><img id="sign" src=${`data:image/png;base64,${customer.signatureImage}`} alt="Signature"></td>
                 <td class="status">${customer.status}</td>
                 <td class="permission-cell">
                     <button class="remove-btn">Reject</button>
@@ -53,12 +54,12 @@ fetch(`${config.BACKEND_API_URL}/staff/get-pending-application`, {
     const rows = document.querySelectorAll("tbody tr");
     rows.forEach((row, index) => {
       row.querySelector(".remove-btn").addEventListener("click", () => {
-        data[index].status = "NON_VERIFIED"; // Update status
+        global_data[index].status = "NON_VERIFIED"; // Update status
         row.querySelector(".status").textContent = "NON_VERIFIED"; // Update UI
       });
 
       row.querySelector(".allow-btn").addEventListener("click", () => {
-        data[index].status = "VERIFIED"; // Update status
+        global_data[index].status = "VERIFIED"; // Update status
         row.querySelector(".status").textContent = "VERIFIED"; // Update UI
       });
     });
@@ -78,7 +79,7 @@ submitButton.addEventListener("click", () => {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(data),
+    body: JSON.stringify(global_data),
   })
     .then((response) => {
       window.location.reload();

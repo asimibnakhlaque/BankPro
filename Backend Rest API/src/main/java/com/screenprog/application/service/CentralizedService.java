@@ -9,7 +9,6 @@ import com.screenprog.application.model.*;
 import com.screenprog.application.repo.*;
 import com.screenprog.application.security.BCryptEncryption;
 import jakarta.annotation.PostConstruct;
-import jakarta.persistence.Tuple;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,7 +95,7 @@ import static com.screenprog.application.security.BCryptEncryption.encoder;
  * @see BCryptEncryption
  */
 @Service
-public class CenteralisedService {
+public class CentralizedService {
 
     final private UsersRepository usersRepository;
     final private CustomerRepository customerRepository;
@@ -105,7 +104,7 @@ public class CenteralisedService {
     final private TransactionsRepository transactionRepository;
     final private EmailService emailService;
 
-    private final Logger LOGGER = LoggerFactory.getLogger(CenteralisedService.class);
+    private final Logger LOGGER = LoggerFactory.getLogger(CentralizedService.class);
 
     /**
      * The constructor for this class
@@ -116,7 +115,7 @@ public class CenteralisedService {
      * @param transactionRepository The repository for transactions
      * @param emailService The service for sending emails
      * */
-    public CenteralisedService(UsersRepository usersRepository, CustomerRepository customerRepository, AccountRepository accountRepository, StaffRepository staffRepository, TransactionsRepository transactionRepository, EmailService emailService) {
+    public CentralizedService(UsersRepository usersRepository, CustomerRepository customerRepository, AccountRepository accountRepository, StaffRepository staffRepository, TransactionsRepository transactionRepository, EmailService emailService) {
         this.usersRepository = usersRepository;
         this.customerRepository = customerRepository;
         this.accountRepository = accountRepository;
@@ -162,7 +161,7 @@ public class CenteralisedService {
      * @param customerDTO {@link CustomerDTO} object containing customer details
      * @see Customer
      * @see CustomerDTO
-     * @see CenteralisedService#register
+     * @see CentralizedService#register
      * @see EmailService#sendEmail
      * @return {@link Customer} after being saved in the repository
      */
@@ -179,7 +178,7 @@ public class CenteralisedService {
 
 
     /**
-     * @deprecated use {@link CenteralisedService#register} instead
+     * @deprecated use {@link CentralizedService#register} instead
      * This method is used to register a customer
      * @param user {@link Users} object to register
      * @return {@link Users} object after being saved in the repository
@@ -229,11 +228,11 @@ public class CenteralisedService {
 
     /**
      * This method is used to add a new staff member.
-     * It registers the staff as a user by calling {@link CenteralisedService#register},
+     * It registers the staff as a user by calling {@link CentralizedService#register},
      * and saves the staff details in the staff repository.
      * @param staff {@link Staff} object containing the staff details
      * @return {@link Staff} object after being saved in the repository
-     * @see CenteralisedService#register
+     * @see CentralizedService#register
      * @see Staff
      * @see StaffRepository
      */
