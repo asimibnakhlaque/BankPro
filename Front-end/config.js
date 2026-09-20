@@ -1,4 +1,4 @@
 const config = {
-    BACKEND_API_URL: 'http://localhost:8080'
+    BACKEND_API_URL: 'https://dashboard.render.com'
 };
 export default config;

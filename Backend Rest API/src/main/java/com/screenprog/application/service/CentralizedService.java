@@ -8,7 +8,7 @@ import com.screenprog.application.for_optimization.TransactionDetails;
 import com.screenprog.application.model.*;
 import com.screenprog.application.repo.*;
 import com.screenprog.application.security.BCryptEncryption;
-import jakarta.persistence.Tuple;
+import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +18,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -93,7 +95,7 @@ import static com.screenprog.application.security.BCryptEncryption.encoder;
  * @see BCryptEncryption
  */
 @Service
-public class CenteralisedService {
+public class CentralizedService {
 
     final private UsersRepository usersRepository;
     final private CustomerRepository customerRepository;
@@ -102,7 +104,7 @@ public class CenteralisedService {
     final private TransactionsRepository transactionRepository;
     final private EmailService emailService;
 
-    private final Logger LOGGER = LoggerFactory.getLogger(CenteralisedService.class);
+    private final Logger LOGGER = LoggerFactory.getLogger(CentralizedService.class);
 
     /**
      * The constructor for this class
@@ -113,7 +115,7 @@ public class CenteralisedService {
      * @param transactionRepository The repository for transactions
      * @param emailService The service for sending emails
      * */
-    public CenteralisedService(UsersRepository usersRepository, CustomerRepository customerRepository, AccountRepository accountRepository, StaffRepository staffRepository, TransactionsRepository transactionRepository, EmailService emailService) {
+    public CentralizedService(UsersRepository usersRepository, CustomerRepository customerRepository, AccountRepository accountRepository, StaffRepository staffRepository, TransactionsRepository transactionRepository, EmailService emailService) {
         this.usersRepository = usersRepository;
         this.customerRepository = customerRepository;
         this.accountRepository = accountRepository;
@@ -121,6 +123,23 @@ public class CenteralisedService {
         this.transactionRepository = transactionRepository;
         this.emailService = emailService;
     }
+
+    @PostConstruct
+    public void createAdminIfNotExist(){
+        if(!this.usersRepository.existsByRoles(List.of("ADMIN", "STAFF", "USER"))){
+            String rawPass =  "admin" + (int) Math.floor((Math.random() * 10000));
+            String pass = encoder.encode(rawPass);
+            var user = Users
+                    .builder()
+                    .roles(List.of("ADMIN", "STAFF", "USER"))
+                    .username("admin")
+                    .password(pass)
+                    .build();
+            usersRepository.save(user);
+            LOGGER.info("Password: {}, Username: {}", rawPass, "admin");
+        }
+    }
+
 
     /**
      * This method is used to get all the customers
@@ -142,7 +161,7 @@ public class CenteralisedService {
      * @param customerDTO {@link CustomerDTO} object containing customer details
      * @see Customer
      * @see CustomerDTO
-     * @see CenteralisedService#register
+     * @see CentralizedService#register
      * @see EmailService#sendEmail
      * @return {@link Customer} after being saved in the repository
      */
@@ -159,7 +178,7 @@ public class CenteralisedService {
 
 
     /**
-     * @deprecated use {@link CenteralisedService#register} instead
+     * @deprecated use {@link CentralizedService#register} instead
      * This method is used to register a customer
      * @param user {@link Users} object to register
      * @return {@link Users} object after being saved in the repository
@@ -175,7 +194,7 @@ public class CenteralisedService {
      * @return {@link List<Account>} List of all the accounts*/
     public List<AccountDetails> getAllAccounts() {
         return accountRepository.findAccountDetailsForFrontend()
-                .stream().map(t -> new AccountDetails(t.get(0, Long.class), t.get(1, Double.class),
+                .stream().map(t -> new AccountDetails(t.get(0, Long.class), t.get(1, BigDecimal.class),
                         t.get(2, Status.class), t.get(3, LocalDateTime.class)))
                 .toList();
     }
@@ -198,7 +217,7 @@ public class CenteralisedService {
             customer.setCustomerID(accountDto.customerId());
             Account account = new Account();
             account.setCustomer(customer);
-            account.setBalance(accountDto.balance());
+            account.setBalance(accountDto.balance().setScale(4, RoundingMode.HALF_EVEN));
             account.setStatus(accountDto.status());
             account.setType(accountDto.type());
             accountRepository.save(account);
@@ -209,11 +228,11 @@ public class CenteralisedService {
 
     /**
      * This method is used to add a new staff member.
-     * It registers the staff as a user by calling {@link CenteralisedService#register},
+     * It registers the staff as a user by calling {@link CentralizedService#register},
      * and saves the staff details in the staff repository.
      * @param staff {@link Staff} object containing the staff details
      * @return {@link Staff} object after being saved in the repository
-     * @see CenteralisedService#register
+     * @see CentralizedService#register
      * @see Staff
      * @see StaffRepository
      */
@@ -252,19 +271,19 @@ public class CenteralisedService {
      * @see Account
      * */
     @Transactional
-    public Transaction deposit(Long accountId, Double amount) {
+    public Transaction deposit(Long accountId, BigDecimal amount) {
         Account account = getAccount(accountId);
         if(account == null)
             return null;
 
-        if(amount <= 0)
-            throw new IllegalArgumentException("Deposit amount must be positive");
+//        if(amount.compareTo(BigDecimal.ZERO) <= 0)
+//            throw new IllegalArgumentException("Deposit amount must be positive");
 
-        account.setBalance(account.getBalance() + amount);
+        account.setBalance(account.getBalance().add(amount).setScale(4, RoundingMode.HALF_EVEN));
         Transaction transaction = Transaction.builder()
                 .accountId(account)
-                .amount(amount)
-                .balanceLeft(account.getBalance())
+                .amount(amount.setScale(4, RoundingMode.HALF_EVEN))
+                .balanceLeft(account.getBalance().setScale(4, RoundingMode.HALF_EVEN))
                 .description("Deposited through bank")
                 .build();
 
@@ -291,20 +310,20 @@ public class CenteralisedService {
      * @see AccountRepository
      */
     @Transactional
-    public Transaction withdraw(Long accountId, Double amount) {
+    public Transaction withdraw(Long accountId, BigDecimal amount) {
         Account account = getAccount(accountId);
         if(account == null)
             return null;
 
-        if(account.getBalance() - amount < 100)
+        if(account.getBalance().subtract(amount).compareTo(BigDecimal.valueOf(100)) < 0)
             throw new IllegalArgumentException("Insufficient balance");
 
-        account.setBalance(account.getBalance() - amount);
+        account.setBalance(account.getBalance().subtract(amount).setScale(4, RoundingMode.HALF_EVEN));
         Transaction transaction = Transaction.builder()
                 .accountId(account)
                 .description("Withdrawn through bank")
-                .amount(amount)
-                .balanceLeft(account.getBalance())
+                .amount(amount.setScale(4, RoundingMode.HALF_EVEN))
+                .balanceLeft(account.getBalance().setScale(4, RoundingMode.HALF_EVEN))
                 .build();
         transactionRepository.save(transaction);
         accountRepository.save(account);
@@ -362,24 +381,24 @@ public class CenteralisedService {
             return Transaction.builder().description("Receiver account is incorrect").build();
         if (accountOfSender == null)
             return Transaction.builder().description("Sender account is incorrect").build();
-        if (accountOfSender.getBalance() - transferDTO.balance() <= 100)
+        if (accountOfSender.getBalance().subtract(transferDTO.balance()).compareTo(BigDecimal.valueOf(100)) < 0)
             return Transaction.builder().description("Insufficient balance").build();
 
-        accountOfReceiver.setBalance(accountOfReceiver.getBalance() + transferDTO.balance());
-        accountOfSender.setBalance(accountOfSender.getBalance() - transferDTO.balance());
+        accountOfReceiver.setBalance(accountOfReceiver.getBalance().add(transferDTO.balance()).setScale(4, RoundingMode.HALF_EVEN));
+        accountOfSender.setBalance(accountOfSender.getBalance().subtract(transferDTO.balance()).setScale(4, RoundingMode.HALF_EVEN));
 
         List<Transaction> transactions = new ArrayList<>(List.of(
                 Transaction.builder()
                         .accountId(accountOfReceiver)
                         .description("Deposited by " + transferDTO.accountIdOfSender())
-                        .amount(transferDTO.balance())
-                        .balanceLeft(accountOfReceiver.getBalance())
+                        .amount(transferDTO.balance().setScale(4, RoundingMode.HALF_EVEN))
+                        .balanceLeft(accountOfReceiver.getBalance().setScale(4, RoundingMode.HALF_EVEN))
                         .build(),
                 Transaction.builder()
                         .accountId(accountOfSender)
                         .description("Credited to " + transferDTO.accountIdOfReceiver())
-                        .amount(transferDTO.balance())
-                        .balanceLeft(accountOfSender.getBalance())
+                        .amount(transferDTO.balance().setScale(4, RoundingMode.HALF_EVEN))
+                        .balanceLeft(accountOfSender.getBalance().setScale(4, RoundingMode.HALF_EVEN))
                         .build()));
         transactionRepository.saveAll(transactions);
 
@@ -483,12 +502,11 @@ public class CenteralisedService {
     /**
      * This method is used to get all the transactions
      * @return {@link List<Transaction>} of all the transactions*/
-    public List<Transaction> getAllTransactions() {
-        transactionRepository.findTransactionsForFrontEnd()
+    public List<TransactionDetails> getAllTransactions() {
+        return transactionRepository.findTransactionsForFrontEnd()
                 .stream()
-                .map(t -> new TransactionDetails(t.get(0, )))
+                .map(t -> new TransactionDetails(t.get(0, Long.class), t.get(1, Double.class), t.get(2, Double.class), t.get(3, LocalDateTime.class), t.get(4, String.class)))
                 .toList();
-        return null;
     }
 
     /*TODO: Test this method*/

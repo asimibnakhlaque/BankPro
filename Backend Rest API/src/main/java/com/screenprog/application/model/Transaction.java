@@ -3,8 +3,10 @@ package com.screenprog.application.model;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -30,14 +32,14 @@ public class Transaction {
     @JoinColumn(name = "account_id", nullable = false)
     @JsonBackReference
     private Account accountId; //
-    private Double amount;
-    private Double balanceLeft;
+    @Column(precision = 19, scale = 4)
+    private BigDecimal amount;
+    @Column(precision = 19, scale = 4)
+    private BigDecimal balanceLeft;
+
+    @CreatedDate
+    @Column(updatable = false)
     private LocalDateTime transactionDate;
     private String description; //= "Deposited by - 12389778";
-
-    @PrePersist
-    protected void onCreate(){
-        transactionDate = LocalDateTime.now();
-    }
 
 }

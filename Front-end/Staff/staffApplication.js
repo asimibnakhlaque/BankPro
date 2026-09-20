@@ -13,7 +13,7 @@ if (username === "deepak.joshi@example.com") {
   document.querySelector(".profile p").textContent = `Deepak Joshi`;
 }
 const token = localStorage.getItem("token");
-
+global_data = []
 spinner.style.display = "block";
 transactions.style.display = "none";
 // Fetch pending applications
@@ -40,7 +40,7 @@ fetch(`${config.BACKEND_API_URL}/staff/get-pending-application`, {
                 <td>${customer.mobileNumber}</td>
                 <td><img id="image" src=${`data:image/png;base64,${customer.image}`} alt="Image"></td>
                 <td><img id="card" src=${`data:image/png;base64,${customer.verificationId}`} alt="Card"></td>
-                <td><img id="card" src=${`data:image/png;base64,${customer.signatureImage}`} alt="Signature"></td>
+                <td><img id="sign" src=${`data:image/png;base64,${customer.signatureImage}`} alt="Signature"></td>
                 <td class="status">${customer.status}</td>
                 <td class="permission-cell">
                     <button class="remove-btn">Reject</button>

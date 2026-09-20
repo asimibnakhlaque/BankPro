@@ -9,6 +9,7 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -24,6 +25,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity() // no need to se prePostEnabled = true as it's true by default
 public class SecurityConfig {
 
     @Autowired
@@ -37,29 +39,27 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(request -> request
-                        .requestMatchers("admin/register", "user/register",
-                                "admin/login", "user/email","user/verify-email",
-                                "user/forgot-pass-email", "user/forgot-pass-change")
+                        .requestMatchers("/admin/hello", "/admin/register", "/user/register",
+                                "/admin/login", "/user/email", "/user/verify-email",
+                                "/user/forgot-pass-email", "/user/forgot-pass-change")
                         .permitAll()
-                        .requestMatchers("admin/**")
+                        .requestMatchers("/admin/**")
                         .hasRole("ADMIN")
-                        .requestMatchers("staff/**")
+                        .requestMatchers("/staff/**")
                         .hasRole("STAFF")
-                        .requestMatchers("user/**")
+                        .requestMatchers("/user/**")
                         .hasRole("USER")
                         .anyRequest().authenticated())
                 .httpBasic(Customizer.withDefaults())
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-                .build(); //to build and return an object of DefaultSecurityFilterChain
+                .build(); // to build and return an object of DefaultSecurityFilterChain
     }
 
     @Bean
-    public AuthenticationProvider authenticationProvider(){
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+    public AuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(this.userDetailsService);
         provider.setPasswordEncoder(new BCryptPasswordEncoder(12));
-        provider.setUserDetailsService(this.userDetailsService);
         return provider;
     }
 

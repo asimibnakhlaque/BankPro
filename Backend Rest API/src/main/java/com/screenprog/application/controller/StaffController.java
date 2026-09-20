@@ -8,7 +8,7 @@ import com.screenprog.application.for_optimization.CustomerDetails;
 import com.screenprog.application.for_optimization.TransactionDetails;
 import com.screenprog.application.model.*;
 import com.screenprog.application.service.ApplicationsService;
-import com.screenprog.application.service.CenteralisedService;
+import com.screenprog.application.service.CentralizedService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -22,11 +22,11 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/staff")
 public class StaffController {
-    final private CenteralisedService service;
+    final private CentralizedService service;
     final private ApplicationsService applicationsService;
     final private Logger LOGGER = LoggerFactory.getLogger(StaffController.class);
 
-    public StaffController(CenteralisedService service, ApplicationsService applicationsService) {
+    public StaffController(CentralizedService service, ApplicationsService applicationsService) {
         this.service = service;
         this.applicationsService = applicationsService;
     }
