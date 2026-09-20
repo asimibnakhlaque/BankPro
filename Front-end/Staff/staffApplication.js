@@ -17,6 +17,7 @@ global_data = []
 spinner.style.display = "block";
 transactions.style.display = "none";
 // Fetch pending applications
+let global_data 
 fetch(`${config.BACKEND_API_URL}/staff/get-pending-application`, {
   method: "GET",
   headers: {
@@ -27,7 +28,7 @@ fetch(`${config.BACKEND_API_URL}/staff/get-pending-application`, {
   .then((response) => response.json())
   .then((data) => {
     const tableBody = document.querySelector("tbody");
-    global_data = data
+    global_data = data;
     tableBody.innerHTML = global_data
       .map(
         (customer, index) => `
