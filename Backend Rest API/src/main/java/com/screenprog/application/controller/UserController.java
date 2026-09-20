@@ -7,9 +7,11 @@ import com.screenprog.application.model.*;
 import com.screenprog.application.service.CentralizedService;
 import com.screenprog.application.service.UserService;
 
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -123,7 +125,7 @@ public class UserController {
     /* TODO: This end-point might get suspension */
     @PreAuthorize("@securityService.ownsAccount(authentication.name, #withdrawDTO.accountNumber())")
     @PutMapping("withdraw")
-    public ResponseEntity<Transaction> withdraw(@RequestBody WithdrawDTO withdrawDTO) {
+    public ResponseEntity<Transaction> withdraw(@RequestBody @Valid WithdrawDTO withdrawDTO) {
         Transaction transaction = userService.withdraw(withdrawDTO);
         if (transaction == null)
             return ResponseEntity.notFound().build();
@@ -132,7 +134,7 @@ public class UserController {
 
     /* TODO: This end-point might get suspension */
     @PostMapping("deposit")
-    public ResponseEntity<String> deposit(@RequestBody WithdrawDTO withdrawDTO) {
+    public ResponseEntity<String> deposit(@RequestBody @Valid WithdrawDTO withdrawDTO) {
         try {
             Transaction transaction = userService.deposit(withdrawDTO);
             if (transaction == null)
@@ -150,7 +152,7 @@ public class UserController {
 
     @PutMapping("transfer")
     @PreAuthorize("@securityService.ownsAccount(authentication.name, #transferDTO.accountIdOfSender())")
-    public ResponseEntity<String> transferAmount(@RequestBody TransferDTO transferDTO) {
+    public ResponseEntity<String> transferAmount(@RequestBody @Valid TransferDTO transferDTO) {
         String s = userService.transferAmount(transferDTO);
         if (s.startsWith("Transaction"))
             return ResponseEntity.ok(s);
